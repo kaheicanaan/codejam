@@ -44,7 +44,7 @@ def generate_latin_square():
 
     # prettfy cache result
     print(len(cache))
-    print(list(sorted(cache.keys(), key=lambda tup: tup[0] * 10 + tup[1])))
+    print(list(sorted(cache.keys(), key=lambda tup: tup[0] * (n ** 2) + tup[1])))
 
 
 def generate_indicium(n, k):
