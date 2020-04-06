@@ -1,6 +1,8 @@
-from collections import defaultdict
-import numpy as np
-from pprint import pprint
+"""
+Normally dynamic programming store the state: visited_nodes only. This map the complexity from O(n!) to (2^n).
+Here we also care the last node in state: visited_nodes, making the number of state goes extremely large.
+Solution below shows DP implementation (to slow and use too much space).
+"""
 
 
 def is_valid_destination(ori_cell, dest_cell):
