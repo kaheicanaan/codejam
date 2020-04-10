@@ -2,6 +2,8 @@
 Test set 1 is simple.
 We look at 4 of the figures of a set will determine the remained one.
 So looking at (595 / 5) * 4 - 1 = 475 (which is F) determines all other figures.
+
+This method can find ALL missing permutations. (Too generic that takes too much time?)
 """
 global max_inspection
 global prefix_tree
@@ -21,15 +23,20 @@ def init_patterns():
     def create_child(node, remained_char):
         if len(remained_char) == 1:
             node.size = 1
-            return
+            return node
 
-        for c in remained_char:
-            child = Node(c)
-            child.parent = node
-            node.children.update({c: child})
-            create_child(child, remained_char.replace(c, ''))
+        node.children = {
+            c: create_child(Node(c), remained_char.replace(c, ''))
+            for c in remained_char
+        }
+        # for c in remained_char:
+        #     child = Node(c)
+        #     child.parent = node
+        #     node.children.update({c: child})
+        #     create_child(child, remained_char.replace(c, ''))
 
         node.size = sum([child.size for child in node.children.values()])
+        return node
 
     prefix_tree = Node('H')
     create_child(prefix_tree, 'ABCDE')  # 'ABC' or 'ABCDE'
