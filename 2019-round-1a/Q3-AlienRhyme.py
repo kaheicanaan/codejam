@@ -1,13 +1,7 @@
-import collections
-from pprint import pprint
-
-
 global n_words
 global words
 global max_char
-global common_prefix_words
-global included_words
-global included_prefixes
+global prefix_tree
 
 
 def read_words():
@@ -22,32 +16,75 @@ def read_words():
         max_char = max(max_char, len(word))
 
 
+class Node:
+    def __init__(self, char):
+        self.char = char
+        self.next = list()
+        self.count = 0
+
+
+def add_word_to_tree(current_node, word):
+    if len(word) == 0:
+        current_node.count = 1
+        return
+
+    # find proper entry
+    c = word[:1]
+    match_node = None
+    for node in current_node.next:
+        if node.char == c:
+            match_node = node
+
+    if not match_node:
+        match_node = Node(c)
+        current_node.next.append(match_node)
+
+    # add word recursively
+    add_word_to_tree(match_node, word[1:])
+    return
+
+
 def count_all_rhymes():
     global n_words
     global words
     global max_char
-    global common_prefix_words
+    global prefix_tree
 
-    # count all possible pairs
-    for i in range(n_words):
-        for j in range(i + 1, n_words):
-            word_1 = words[i]
-            word_2 = words[j]
-            for k in range(1, max_char):
-                # be careful the length of words
-                if (len(word_1) < k) or (len(word_2) < k):
-                    break
-                if word_1[:k] == word_2[:k]:
-                    common_prefix_words[k][word_1[:k]].append((word_1, word_2))
+    for word in words:
+        add_word_to_tree(prefix_tree, word)
+
+
+def modify_count_of_children(node):
+    # adjust count
+    sum_of_children_count = 0
+    for child_node in node.next:
+        # go to leaves
+        modify_count_of_children(child_node)
+        sum_of_children_count += child_node.count
+
+    # 2 unpaired word will pair up using prefix start from this node
+    node.count = (node.count + sum_of_children_count)
+    if node.count >= 2:
+        if not node.char == '':  # except for head node (prefix = '')
+            node.count -= 2
+
+
+def print_count():
+    global prefix_tree
+
+    def dfs(node):
+        print(node.char, node.count)
+        for n in node.next:
+            dfs(n)
+
+    dfs(prefix_tree)
 
 
 def maximize_rhyme(n):
     global n_words
     global words
     global max_char
-    global common_prefix_words
-    global included_words
-    global included_prefixes
+    global prefix_tree
 
     # init
     n_words = n
@@ -55,36 +92,12 @@ def maximize_rhyme(n):
     max_char = 0
     read_words()
 
-    common_prefix_words = [collections.defaultdict(list) for _ in range(max_char + 1)]
+    prefix_tree = Node('')  # head
     count_all_rhymes()
-    # pprint(common_prefix_words)
 
-    # count pairs from longest matched pairs
-    included_words = set()
-    included_prefixes = set()
-    for i in range(max_char, 0, -1):
-        # print(i)
-        matched_pairs = common_prefix_words[i]
-        # pprint(matched_pairs)
-        # within this layer, all matched pairs are unique (i.e. words will not appears more than once)
-        for prefix, pairs in matched_pairs.items():
-            # if this prefix is added, no need to check other pairs
-            if prefix in included_prefixes:
-                continue
-
-            for word_1, word_2 in pairs:
-                # if any one of these words are included in previous layer, ignore this pair
-                if (word_1 in included_words) or (word_2 in included_words):
-                    pass
-                else:
-                    included_words.add(word_1)
-                    included_words.add(word_2)
-                    included_prefixes.add(prefix)
-                    break  # also break word pairs loop
-
-    # print(included_words)
-    return len(included_words)
-
+    # count number of unmatched words
+    modify_count_of_children(prefix_tree)
+    return len(words) - prefix_tree.count
 
 
 
@@ -124,6 +137,8 @@ FI
 
 
 if __name__ == '__main__':
+    # print(maximize_rhyme(6))
+    # exit()
     n_case = int(input())
     for case_id in range(1, n_case + 1):
         number_of_words = int(input())
